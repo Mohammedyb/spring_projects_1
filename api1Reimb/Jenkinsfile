@@ -32,6 +32,17 @@ pipeline {
          }
         }
     }
+    stage('Build') {
+       when {
+          branch 'main'
+       }
+       steps {
+         withMaven {
+           sh 'mvn -f api1Reimb/pom.xml clean install'
+           sh 'mvn -f api1Reimb/pom.xml clean package -DskipTests'
+         }
+       }
+    }
     stage('Docker Deliver') {
         when {
             branch 'main'
