@@ -23,7 +23,8 @@ pipeline {
         }
         steps {
             withMaven {
-                sh 'mvn -f /api1Reimb/pom.xml clean package -DskipTests'
+                sh 'mvn -f spring_projects_1/api1Reimb/pom.xml clean install'
+                sh 'mvn -f spring_projects_1/api1Reimb/pom.xml clean package -DskipTests'
            }
         }
     }
