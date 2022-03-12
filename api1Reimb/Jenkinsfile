@@ -35,8 +35,8 @@ pipeline {
         steps {
          dir('api1Reimb/') {
             script {
-                echo "$registry:$currentBuild.number"
-                dockerImage = docker.build ("$registry", "-f Dockerfile .")
+               echo "$registry:$currentBuild.number"
+               dockerImage = docker.build "$registry"
             }
          }
         }
