@@ -23,7 +23,6 @@ pipeline {
         }
         steps {
             withMaven {
-                sh 'mvn -f /api1Reimb/pom.xml clean install' 
                 sh 'mvn -f /api1Reimb/pom.xml clean package -DskipTests'
            }
         }
