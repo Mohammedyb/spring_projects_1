@@ -17,44 +17,44 @@ pipeline {
             }
          }
        }
+       stage('Build') {
+          when {
+             branch 'main'
+          }
+          steps {
+            withMaven {
+              sh 'mvn -f api1Reimb/pom.xml clean install'
+              sh 'mvn -f api1Reimb/pom.xml clean package -DskipTests'
+            }
+          }
+       }
+       stage('Docker Build') {
+           when {
+               branch 'main'
+           }
+           steps {
+            dir('api1Reimb/') {
+               script {
+                  docker exec -u 0 -it bash
+                  echo "$registry:$currentBuild.number"
+                  dockerImage = docker.build "$registry"
+               }
+            }
+           }
+       }
 
-    stage('Docker Build') {
-        when {
-            branch 'main'
+       stage('Docker Deliver') {
+           when {
+               branch 'main'
+           }
+           steps {
+               script {
+                   docker.withRegistry('', dockerHubCreds) {
+                       dockerImage.push("$currentBuild.number")
+                       dockerImage.push("latest")
+                   }
+               }
+           }
         }
-        steps {
-         dir('api1Reimb/') {
-            script {
-               docker exec -u 0 -it bash
-               echo "$registry:$currentBuild.number"
-               dockerImage = docker.build "$registry"
-            }
-         }
-        }
-    }
-    stage('Build') {
-       when {
-          branch 'main'
-       }
-       steps {
-         withMaven {
-           sh 'mvn -f api1Reimb/pom.xml clean install'
-           sh 'mvn -f api1Reimb/pom.xml clean package -DskipTests'
-         }
-       }
-    }
-    stage('Docker Deliver') {
-        when {
-            branch 'main'
-        }
-        steps {
-            script {
-                docker.withRegistry('', dockerHubCreds) {
-                    dockerImage.push("$currentBuild.number")
-                    dockerImage.push("latest")
-                }
-            }
-        }
-     }
-  }
+   }
 }
