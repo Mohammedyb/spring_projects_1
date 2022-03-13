@@ -1,0 +1,85 @@
+pipeline {
+ environment {
+        registry = 'jschuwan/api1'
+        dockerHubCreds = 'docker_hub'
+        dockerImage = ''
+         deploymentFile = 'spring_projects_1/api1Reimb/k8s/deployment.yml'
+    }
+    agent any
+    stages {
+        stage('Test') {
+            when {
+                branch 'feature/*'
+            }
+        steps {
+            withMaven {
+                cleanWs()
+                sh 'mvn test'
+            }
+         }
+       }
+       stage('Build') {
+          when {
+             branch 'main'
+          }
+          steps {
+            withMaven {
+
+              sh 'mvn -f api1Reimb/pom.xml clean install'
+              sh 'mvn -f api1Reimb/pom.xml clean package -DskipTests'
+
+            }
+          }
+       }
+       stage('Docker Build') {
+           when {
+               branch 'main'
+           }
+           steps {
+            dir('api1Reimb/') {
+               script {
+                  echo "$registry:$currentBuild.number"
+                  dockerImage = docker.build "$registry"
+               }
+            }
+           }
+       }
+
+       stage('Docker Deliver') {
+           when {
+               branch 'main'
+           }
+           steps {
+               script {
+                   docker.withRegistry('', dockerHubCreds) {
+                       dockerImage.push("$currentBuild.number")
+                       dockerImage.push("latest")
+                   }
+               }
+           }
+        }
+
+        stage('Deploy to GKE') {
+                when {
+                    branch 'main'
+                }
+                steps{
+                dir('api1Reimb/') {
+                    sh 'sed -i "s/%TAG%/$BUILD_NUMBER/g" ./k8s/deployment.yml'
+                    sh 'cat ./k8s/deployment.yml'
+                    step([$class: 'KubernetesEngineBuilder',
+                        projectId: 'spherical-gate-338602',
+                        clusterName: 'spherical-gate-338602-gke',
+                        zone: 'us-central1',
+                        manifestPattern: '/k8s/',
+                        credentialsId: 'GKE-ServiceAccount',
+                        verifyDeployments: true
+                    ])
+                               }
+                            }
+                        } }
+
+    }
+
+
+
