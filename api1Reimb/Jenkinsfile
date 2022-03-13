@@ -71,15 +71,15 @@ pipeline {
                         projectId: 'spherical-gate-338602',
                         clusterName: 'spherical-gate-338602-gke',
                         zone: 'us-central1',
-                        manifestPattern: '/k8s/',
-                        credentialsId: 'GKE-ServiceAccount',
+                        manifestPattern: 'k8s/',
+                        credentialsId: 'spherical-gate-338602',
                         verifyDeployments: true
                     ])
-                               }
-                            }
-                        } }
-
+                }
+        }
     }
+    }
+ }
 
 
 
