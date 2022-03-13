@@ -1,96 +1,64 @@
 pipeline {
-  environment {
-    api1Registry = 'husamalsheikh/weatherapi'
-    api2Registry = 'husamalsheikh/twilioapi'
-    api3Registry = 'husamalsheikh/queryapi'
-    dockerHubCreds = 'docker_hub'
-    dockerImage1 = ''
-    dockerImage2 = ''
-    dockerImage3 = ''
-  }
-  agent any
-  stages {
-
-    stage('Test') {
-    when  { anyOf {
-      branch 'feature/*'
-      branch 'dev'
-      }
+ environment {
+        registry = 'jschuwan/api1'
+        dockerHubCreds = 'docker_hub'
+        dockerImage = ''
+         deploymentFile = 'spring_projects_1/api1Reimb/k8s/deployment.yml'
     }
-      steps {
-        dir('API1/WeatherAPI') {
-          withMaven {
-            sh 'mvn test'
-          }
-        }
-        dir('API2/Twilio-api') {
-          withMaven {
-              sh 'mvn test'
-          }
-        }
-        dir('API3/QueryAPI') {
-          withMaven {
-              sh 'mvn test'
-          }
-        }
-      }
-    }
-
-    stage('Maven Package') {
-      when { anyOf {
-        branch 'feature/*'
-        branch 'dev'
-        branch 'main'
-        }
-      }
+    agent any
+    stages {
+        stage('Test') {
+            when {
+                branch 'feature/*'
+            }
         steps {
-          dir('API1/WeatherAPI') {
             withMaven {
-              sh 'mvn clean package -DskipTests'
+                cleanWs()
+                sh 'mvn test'
             }
+         }
+       }
+       stage('Build') {
+          when {
+             branch 'main'
           }
-          dir('API2/Twilio-api') {
+          steps {
             withMaven {
-              sh 'mvn clean package -DskipTests'
-            }
-          }
-          dir('API3/QueryAPI') {
-            withMaven {
-              sh 'mvn clean package -DskipTests'
-            }
-          }
-        }
-    }
 
-    stage('Docker Build') {
-        when { anyOf {
-          branch 'dev'
-          branch 'main'
-        }
-      }
-        steps {
-          dir('API1/WeatherAPI') {
-            script {
-                echo "$api1Registry:$currentBuild.number"
-                dockerImage1 = docker.build "$api1Registry"
-            }
-          }
-          dir('API2/Twilio-api') {
-            script {
-                echo "$api2Registry:$currentBuild.number"
-                dockerImage2 = docker.build "$api2Registry"
-            }
-          }
-          dir('API3/QueryAPI') {
-            script {
-                echo "$api3Registry:$currentBuild.number"
-                dockerImage3 = docker.build "$api3Registry"
-            }
-          }
-        }
-    }
+              sh 'mvn -f api1Reimb/pom.xml clean install'
+              sh 'mvn -f api1Reimb/pom.xml clean package -DskipTests'
 
-<<<<<<< HEAD
+            }
+          }
+       }
+       stage('Docker Build') {
+           when {
+               branch 'main'
+           }
+           steps {
+            dir('api1Reimb/') {
+               script {
+                  echo "$registry:$currentBuild.number"
+                  dockerImage = docker.build "$registry"
+               }
+            }
+           }
+       }
+
+       stage('Docker Deliver') {
+           when {
+               branch 'main'
+           }
+           steps {
+               script {
+                   docker.withRegistry('', dockerHubCreds) {
+                       dockerImage.push("$currentBuild.number")
+                       dockerImage.push("latest")
+                   }
+               }
+           }
+        }
+
         stage('Deploy to GKE') {
                 when {
                     branch 'main'
@@ -103,108 +71,15 @@ pipeline {
                         projectId: 'spherical-gate-338602',
                         clusterName: 'spherical-gate-338602-gke',
                         zone: 'us-central1',
-                        manifestPattern: 'k8s/',
-                        credentialsId: 'spherical-gate-338602',
+                        manifestPattern: '/k8s/',
+                        credentialsId: 'GKE-ServiceAccount',
                         verifyDeployments: true
                     ])
-                }
-        }
-    }
-=======
-    stage('Docker Push') {
-      when { anyOf {
-        branch 'dev'
-        branch 'main'
-        }
-      }
-      steps {
-        dir('API1/WeatherAPI') {
-          script {
-            docker.withRegistry('', dockerHubCreds) {
-              dockerImage1.push("latest")
-            }
-          }
-        }
-        dir('API2/Twilio-api') {
-          script {
-            docker.withRegistry('', dockerHubCreds) {
-              dockerImage2.push("latest")
-            }
-          }
-        }
-        dir('API3/QueryAPI') {
-          script {
-            docker.withRegistry('', dockerHubCreds) {
-              dockerImage3.push("latest")
-            }
-          }
-        }
-      }
+                               }
+                            }
+                        } }
+
     }
 
-    stage('Notify Discord') {
-      when { anyOf {
-          branch 'dev'
-          branch 'main'
-        }
-      }
-      steps {
-        discordSend description: "Build #$currentBuild.number",
-          link: BUILD_URL, result: currentBuild.currentResult,
-          title: JOB_NAME,
-          webhookURL: "https://discord.com/api/webhooks/949839260050141205/rJ48IDNgUUpKpIgePlV97ieIPf4srG73pv9ZUSGcgf-g0Hp5Zzm4aSNGv6m0lOwDd-SJ"
-      }
->>>>>>> 896a969c4180986ad6c9ca9336318d955a63abed
-    }
- }
 
-    stage('Wait for SRE approval to Deploy') {
-      when { anyOf {
-        branch 'dev'
-        branch 'main'
-        }
-      }
-      steps {
-        script {
-          try {
-            timeout(time: 60, unit: 'MINUTES') {
-              approved = input message: 'Deploy to production?', ok: 'Continue',
-              parameters: [choice(name: 'Approved', choices: 'Yes\nNo', description: 'Deploy build to production')]
-              if(approved != 'Yes') {
-                error('Build did not pass approval')
-              }
-            }
-          } catch(error) {
-            error('Build failed because timout was exceeded.')
-          }
-        }
-      }
-    }
 
-    stage('Deploy to GKE') {
-      when { anyOf {
-        branch 'dev'
-        branch 'main'
-      }
-      }
-      steps{
-          sh 'sed -i "s/%TAG%/$BUILD_NUMBER/g" ./K8s/deployment.yaml'
-          sh 'cat ./K8s/deployment.yaml'
-          step([$class: 'KubernetesEngineBuilder',
-              projectId: 'windy-album-339219',
-              clusterName: 'project2-gke',
-              zone: 'us-central1',
-              manifestPattern: 'K8s/',
-              credentialsId: 'project2-gke',
-              verifyDeployments: true
-          ])
-      }
-    }
-
-    stage('Clean Workspace') {
-      steps {
-        cleanWs()
-      }
-    }
-  }
-}
