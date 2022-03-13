@@ -16,42 +16,52 @@ pipeline {
                 cleanWs()
                 sh 'mvn test'
             }
-        }
-    }
-    stage('Build') {
-        when {
-            branch 'main'
-        }
-        steps {
+         }
+       }
+       stage('Build') {
+          when {
+             branch 'main'
+          }
+          steps {
             withMaven {
+<<<<<<< HEAD
                 sh 'mvn -f spring_projects_1/api1Reimb/pom.xml clean install'
                 sh 'mvn -f spring_projects_1/api1Reimb/pom.xml clean package -DskipTests'
+=======
+              sh 'mvn -f api1Reimb/pom.xml clean install'
+              sh 'mvn -f api1Reimb/pom.xml clean package -DskipTests'
+>>>>>>> c0d21aa65a09ba66b7fb249f3e89f26ad6939cd6
             }
-        }
-    }
-    stage('Docker Build') {
-        when {
-            branch 'main'
-        }
-        steps {
-            script {
-                echo "$registry:$currentBuild.number"
-                dockerImage = docker.build ("$registry", "-f api1Reimb/Dockerfile .")
+          }
+       }
+       stage('Docker Build') {
+           when {
+               branch 'main'
+           }
+           steps {
+            dir('api1Reimb/') {
+               script {
+                  echo "$registry:$currentBuild.number"
+                  dockerImage = docker.build "$registry"
+               }
             }
+           }
+       }
+
+       stage('Docker Deliver') {
+           when {
+               branch 'main'
+           }
+           steps {
+               script {
+                   docker.withRegistry('', dockerHubCreds) {
+                       dockerImage.push("$currentBuild.number")
+                       dockerImage.push("latest")
+                   }
+               }
+           }
         }
-    }
-    stage('Docker Deliver') {
-        when {
-            branch 'main'
-        }
-        steps {
-            script {
-                docker.withRegistry('', dockerHubCreds) {
-                    dockerImage.push("$currentBuild.number")
-                    dockerImage.push("latest")
-                }
-            }
-        }
+<<<<<<< HEAD
         stage('Deploy to GKE') {
                 when {
                     branch 'main'
@@ -72,3 +82,7 @@ pipeline {
                         }
 
     }
+=======
+   }
+}
+>>>>>>> c0d21aa65a09ba66b7fb249f3e89f26ad6939cd6
