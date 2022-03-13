@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api1reimb-dep
+  name: api-1-reimb-dep
   labels:
     app: api1reimb-api
 spec:
