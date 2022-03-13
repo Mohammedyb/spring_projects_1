@@ -64,7 +64,6 @@ pipeline {
                     branch 'main'
                 }
                 steps{
-                    sh 'kubectl apply -f .api1Reimb/k8s'
                     sh 'sed -i "s/%TAG%/$BUILD_NUMBER/g" ./api1Reimb/k8s/deployment.yml'
                     sh 'cat ./api1Reimb/k8s/deployment.yml'
                     step([$class: 'KubernetesEngineBuilder',
