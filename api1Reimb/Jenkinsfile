@@ -3,7 +3,7 @@ pipeline {
         registry = 'jschuwan/api1'
         dockerHubCreds = 'docker_hub'
         dockerImage = ''
-         deploymentFile = 'spring_projects_1/api1Reimb/k8s/deployment.yml'
+         deploymentFile = 'api1Reimb/k8s/deployment.yml'
     }
     agent any
     stages {
