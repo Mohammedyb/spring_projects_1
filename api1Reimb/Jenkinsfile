@@ -64,14 +64,13 @@ pipeline {
                     branch 'main'
                 }
                 steps{
-                dir('api1Reimb/') {
-                    sh 'sed -i "s/%TAG%/$BUILD_NUMBER/g" ./k8s/deployment.yml'
-                    sh 'cat ./k8s/deployment.yml'
+                    sh 'sed -i "s/%TAG%/$BUILD_NUMBER/g" ./api1Reimb/k8s/deployment.yml'
+                    sh 'cat ./api1Reimb/k8s/deployment.yml'
                     step([$class: 'KubernetesEngineBuilder',
                         projectId: 'spherical-gate-338602',
                         clusterName: 'spherical-gate-338602-gke',
                         zone: 'us-central1',
-                        manifestPattern: 'k8s/',
+                        manifestPattern: 'api1Reimb/k8s/',
                         credentialsId: 'spherical-gate-338602',
                         verifyDeployments: true
                     ])
