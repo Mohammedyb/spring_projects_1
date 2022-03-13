@@ -24,13 +24,13 @@ pipeline {
           }
           steps {
             withMaven {
-<<<<<<< HEAD
+
                 sh 'mvn -f spring_projects_1/api1Reimb/pom.xml clean install'
                 sh 'mvn -f spring_projects_1/api1Reimb/pom.xml clean package -DskipTests'
-=======
+
               sh 'mvn -f api1Reimb/pom.xml clean install'
               sh 'mvn -f api1Reimb/pom.xml clean package -DskipTests'
->>>>>>> c0d21aa65a09ba66b7fb249f3e89f26ad6939cd6
+
             }
           }
        }
@@ -61,7 +61,7 @@ pipeline {
                }
            }
         }
-<<<<<<< HEAD
+
         stage('Deploy to GKE') {
                 when {
                     branch 'main'
@@ -82,7 +82,7 @@ pipeline {
                         }
 
     }
-=======
+
    }
 }
->>>>>>> c0d21aa65a09ba66b7fb249f3e89f26ad6939cd6
+
